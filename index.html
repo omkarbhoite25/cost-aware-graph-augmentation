@@ -365,6 +365,7 @@
       display: flex;
       flex-direction: column;
       gap: 0.4rem;
+      min-width: 0;
     }
     .callout .stat.highlight { background: var(--accent-light); }
     .stat-label {
@@ -374,7 +375,7 @@
       text-transform: uppercase;
       color: var(--ink-3);
     }
-    .stat-value { font-family: var(--serif); font-size: 1.5rem; line-height: 1.2; color: var(--ink); }
+    .stat-value { font-family: var(--serif); font-size: 1.5rem; line-height: 1.2; color: var(--ink); max-width: 100%; overflow-x: auto; overflow-y: hidden; }
     .stat-value.long { font-size: 1.12rem; line-height: 1.45; }
     .stat-note  { font-size: 0.88rem; color: var(--ink-3); line-height: 1.5; }
 
@@ -657,8 +658,24 @@
       .callout { grid-auto-flow: row; grid-auto-columns: auto; }
     }
 
+    /* Inline formulae cannot line-break, so on very narrow screens the
+       longest ones sit a few pixels past the text column and get clipped.
+       A small step down on inline math only (display math scrolls in its
+       own block) keeps them inside the measure. */
+    @media (max-width: 420px) {
+      p .katex, li .katex, .stat-note .katex,
+      .chain-note .katex, .subcap .katex, figcaption .katex { font-size: 0.9em; }
+    }
+
     @media (max-width: 720px) {
       :root { --content-gutter: 0px; }
+      .math-block { padding: 1rem 1.05rem; font-size: 0.88rem; }
+      .chain { padding: 1.15rem 1.1rem; }
+      .chain .chain-eq { font-size: 0.88rem; }
+      .stat-value { font-size: 1.25rem; }
+      .stat-value.long { font-size: 0.92rem; }
+      .callout .stat { padding: 1.1rem 1.15rem; }
+      pre { white-space: pre-wrap; overflow-wrap: anywhere; }
       .callout { grid-auto-flow: row; grid-auto-columns: auto; }
       nav { justify-content: flex-start; }
       nav ul { margin-inline: 0; }
@@ -695,7 +712,9 @@
     <div class="affiliation"><sup>★</sup> Department of Information and Communication Engineering, Aalto University, Espoo, Finland</div>
 
     <div class="buttons">
-      <span class="btn btn-disabled" aria-disabled="true" title="The paper goes live here once it is on arXiv">Paper &nbsp;·&nbsp; arXiv soon</span>
+      <span class="btn btn-disabled" aria-disabled="true" title="A link to the paper goes live here soon">Update soon</span>
+      <span class="btn btn-disabled" aria-disabled="true" title="The code will be released here">Code &nbsp;·&nbsp; update soon</span>
+      <span class="btn btn-disabled" aria-disabled="true" title="The conference poster will be posted here">Poster &nbsp;·&nbsp; update soon</span>
       <a class="btn btn-secondary" href="#bibtex">BibTeX</a>
     </div>
 
@@ -838,8 +857,8 @@
 
       <div class="math-block">
         <span class="tag">Rank-one update and closed-form marginal gain</span>
-        $$\mathbf M'^{-1} = \mathbf M^{-1} - \frac{w}{1+w\,\mathbf a^\top \mathbf M^{-1}\mathbf a}\,(\mathbf M^{-1}\mathbf a)(\mathbf M^{-1}\mathbf a)^\top$$
-        $$\Delta R_{\mathrm{tot}} = \frac{n\,w\,b^{2}(v_i,v_j)}{1+w\,r(v_i,v_j)},\qquad r \coloneqq \mathbf a^\top \mathbf M^{-1}\mathbf a,\quad b^{2} \coloneqq \|\mathbf M^{-1}\mathbf a\|_2^2$$
+        $$\mathbf M'^{-1} = \mathbf M^{-1} - \frac{w\,(\mathbf M^{-1}\mathbf a)(\mathbf M^{-1}\mathbf a)^\top}{1+w\,\mathbf a^\top \mathbf M^{-1}\mathbf a}$$
+        $$\begin{gathered}\Delta R_{\mathrm{tot}} = \frac{n\,w\,b^{2}(v_i,v_j)}{1+w\,r(v_i,v_j)}\\[0.35em] r \coloneqq \mathbf a^\top \mathbf M^{-1}\mathbf a,\quad b^{2} \coloneqq \|\mathbf M^{-1}\mathbf a\|_2^2\end{gathered}$$
       </div>
 
       <p>Trial weights follow a cost-aware provisional spend $s \coloneqq C_{\mathrm{rem}}/k_{\mathrm{rem}}$, clamped to the admissible interval as $w_{(v_i,v_j)} \coloneqq \max\{w_{\min},\min\{w_{\max},\,s/c_{(v_i,v_j)}\}\}$. The procedure repeats until $k$ edges are added or the budget can no longer cover any remaining candidate at $w_{\min}$.</p>
