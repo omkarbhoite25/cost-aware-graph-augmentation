@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cost-aware Graph Augmentation for Robust Networks via Effective Resistance</title>
+  <meta name="description" content="A cost-aware SDP relaxation for budgeted graph augmentation: jointly select and size k new links to minimize total effective resistance, with an a posteriori optimality certificate and a rank-one greedy baseline." />
+
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23faf7f0'/%3E%3Cg stroke='%232d5a8e' stroke-width='1.6' fill='none'%3E%3Cpath d='M8 8 L24 8 M8 8 L8 24 M8 24 L24 24 M24 8 L24 24 M8 8 L24 24'/%3E%3C/g%3E%3Cg fill='%231a1814'%3E%3Ccircle cx='8' cy='8' r='2.6'/%3E%3Ccircle cx='24' cy='8' r='2.6'/%3E%3Ccircle cx='8' cy='24' r='2.6'/%3E%3Ccircle cx='24' cy='24' r='2.6'/%3E%3C/g%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=DM+Mono:wght@300;400;500&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,300;1,9..144,400&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" />
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+    onload="renderMathInElement(document.body, {delimiters: [{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}], throwOnError:false});"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      /* dark outer shell */
+      --shell:        #16130f;
+      --shell-2:      #241f18;
+
+      /* warm paper interior */
+      --paper:        #faf7f0;
+      --paper-2:      #f2ede2;
+      --paper-3:      #ebe5d8;
+
+      --ink:          #1a1814;
+      --ink-2:        #3d3830;
+      --ink-3:        #7a7060;
+      --rule:         #ddd8ce;
+      --rule-soft:    #e8e3d8;
+      --accent:       #2d5a8e;
+      --accent-light: #e8f0f9;
+      --accent-rule:  #c5d9f0;
+
+      --serif:   'EB Garamond', Georgia, serif;
+      --display: 'Fraunces', Georgia, serif;
+      --mono:    'DM Mono', ui-monospace, 'Courier New', monospace;
+
+      --container-max: 1040px;
+      --container-pad: clamp(20px, 5vw, 64px);
+      /* clear space between the vertical guide lines and the text column,
+         so prose never runs into the rules */
+      --content-gutter: clamp(1.1rem, 2.6vw, 2.6rem);
+      --line-color:  rgba(26, 24, 20, 0.10);
+      --line-strong: rgba(26, 24, 20, 0.30);
+      --corner-size: 6px;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      /* fluid root size: all rem-based type and spacing scales with the
+         device, from 15px on small phones up to 19px on large desktops */
+      font-size: clamp(15px, 0.9375rem + 0.35vw, 19px);
+    }
+
+    body {
+      background: var(--shell);
+      color: var(--ink);
+      font-family: var(--serif);
+      font-size: 1rem;
+      line-height: 1.75;
+      -webkit-font-smoothing: antialiased;
+      padding: clamp(0px, 2.2vw, 34px);
+    }
+
+    /* ── Paper shell ─────────────────────────────────── */
+    .paper {
+      position: relative;
+      isolation: isolate;
+      background-color: var(--paper);
+      /* subtle diagonal technical texture */
+      background-image:
+        repeating-linear-gradient(135deg,
+          rgba(26,24,20,0.020) 0px, rgba(26,24,20,0.020) 1px,
+          transparent 1px, transparent 8px);
+      border-radius: clamp(0px, 1.4vw, 20px);
+      box-shadow: 0 1px 0 rgba(255,255,255,0.5) inset,
+                  0 24px 70px rgba(0,0,0,0.45);
+      overflow: clip;
+    }
+
+    /* container-lines: vertical guides at the content container edges */
+    .paper::before,
+    .paper::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      z-index: 0;
+      width: 1px;
+      background: var(--line-color);
+      pointer-events: none;
+    }
+    .paper::before { left:  max(var(--container-pad), calc((100% - var(--container-max)) / 2)); }
+    .paper::after  { right: max(var(--container-pad), calc((100% - var(--container-max)) / 2)); }
+
+    .paper > header,
+    .paper > main,
+    .paper > footer { position: relative; z-index: 1; }
+
+    /* ── Header ──────────────────────────────────────── */
+    header {
+      position: relative;
+      padding: clamp(3.5rem, 8vw, 6rem)
+               calc(var(--container-pad) + var(--content-gutter))
+               clamp(2.5rem, 5vw, 4rem);
+      text-align: center;
+      background: linear-gradient(180deg, var(--paper-2) 0%, rgba(242,237,226,0) 100%);
+      border-bottom: 1px solid var(--rule);
+    }
+
+    /* L-brackets framing the hero */
+    .bracket {
+      position: absolute;
+      width: 22px; height: 22px;
+      border: 1px solid var(--line-strong);
+      pointer-events: none;
+      opacity: 0.55;
+    }
+    .bracket.tl { top: 22px;    left: 22px;    border-right: none; border-bottom: none; }
+    .bracket.tr { top: 22px;    right: 22px;   border-left:  none; border-bottom: none; }
+    .bracket.bl { bottom: 22px; left: 22px;    border-right: none; border-top:    none; }
+    .bracket.br { bottom: 22px; right: 22px;   border-left:  none; border-top:    none; }
+
+    .venue-tag {
+      display: inline-block;
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--accent);
+      background: var(--accent-light);
+      border: 1px solid var(--accent-rule);
+      border-radius: 2px;
+      padding: 0.25em 0.75em;
+      margin-bottom: 2rem;
+    }
+
+    h1 {
+      font-family: var(--serif);
+      font-weight: 400;
+      /* px-based so it does not compound with the fluid root size; capped
+         so line 1 always holds on a single line within the max-width */
+      font-size: clamp(27px, 3vw, 42px);
+      line-height: 1.22;
+      color: var(--ink);
+      max-width: 940px;
+      margin: 0 auto 2rem;
+      letter-spacing: -0.01em;
+    }
+    h1 .line { display: block; }
+    h1 .line + .line { margin-top: 0.12em; }
+    .title-accent { color: var(--accent); }
+
+    .authors { font-size: 1.12rem; color: var(--ink-2); margin-bottom: 0.4rem; }
+    .authors a {
+      color: var(--ink-2);
+      text-decoration: underline;
+      text-decoration-color: var(--rule);
+      transition: color 0.2s, text-decoration-color 0.2s;
+    }
+    .authors a:hover { color: var(--accent); text-decoration-color: var(--accent); }
+    .authors sup { font-family: var(--mono); font-size: 0.62em; color: var(--ink-3); }
+
+    .affiliation { font-size: 1.02rem; color: var(--ink-3); margin-bottom: 0.35rem; }
+    .affiliation + .affiliation { margin-bottom: 2.25rem; }
+    .affiliation sup { font-family: var(--mono); font-size: 0.66em; }
+
+    /* ── Buttons ─────────────────────────────────────── */
+    .buttons { display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45em;
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      text-decoration: none;
+      padding: 0.55em 1.2em;
+      border-radius: 2px;
+      border: 1px solid;
+      transition: background 0.2s, color 0.2s, border-color 0.2s;
+    }
+    .btn-primary   { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+    .btn-primary:hover { background: var(--accent); border-color: var(--accent); }
+    .btn-secondary { background: transparent; color: var(--ink); border-color: var(--rule); }
+    .btn-secondary:hover { border-color: var(--ink); }
+    .btn-disabled {
+      background: transparent;
+      color: var(--ink-3);
+      border-color: var(--rule);
+      border-style: dashed;
+      cursor: default;
+    }
+
+    .venue-detail {
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+      margin-top: 1.75rem;
+      line-height: 1.9;
+    }
+
+    /* ── Nav ─────────────────────────────────────────── */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: rgba(250,247,240,0.94);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--rule);
+      padding: 0 calc(var(--container-pad) + var(--content-gutter));
+      display: flex;
+      justify-content: center;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    nav::-webkit-scrollbar { display: none; }
+    nav ul { display: flex; gap: 0.25rem; list-style: none; margin-inline: auto; }
+    nav a {
+      display: block;
+      white-space: nowrap;
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+      text-decoration: none;
+      padding: 0.9em 0.85em;
+      border-bottom: 2px solid transparent;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    nav a:hover, nav a.active { color: var(--ink); border-bottom-color: var(--accent); }
+
+    /* ── Main ────────────────────────────────────────── */
+    main {
+      width: min(100% - (var(--container-pad) * 2), var(--container-max));
+      margin-inline: auto;
+    }
+
+    section {
+      position: relative;
+      scroll-margin-top: 3.2rem;
+      padding: clamp(2.75rem, 6vw, 4rem) var(--content-gutter);
+      border-bottom: 1px solid var(--rule-soft);
+    }
+    section:last-child { border-bottom: none; }
+
+    /* mini corner squares on major sections */
+    .corner {
+      position: absolute;
+      width: var(--corner-size);
+      height: var(--corner-size);
+      background: var(--line-strong);
+      pointer-events: none;
+      opacity: 0.5;
+      z-index: 0;
+    }
+    .corner.tl { top: 0; left:  0; transform: translate(-50%, -50%); }
+    .corner.tr { top: 0; right: 0; transform: translate(50%, -50%); }
+
+    .section-label {
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+      margin-bottom: 0.6rem;
+    }
+
+    h2 {
+      font-family: var(--display);
+      font-weight: 400;
+      font-size: clamp(1.35rem, 3vw, 1.6rem);
+      color: var(--ink);
+      margin-bottom: 1.5rem;
+      letter-spacing: -0.01em;
+    }
+
+    h3 {
+      font-family: var(--mono);
+      font-size: 0.95rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 1rem;
+      margin-top: 2rem;
+    }
+
+    p { margin-bottom: 1.1em; }
+    p:last-child { margin-bottom: 0; }
+    em { font-style: italic; }
+
+    a.ref { color: var(--accent); text-decoration: none; border-bottom: 1px solid var(--accent-rule); }
+
+    /* Several mono labels are uppercased, which also uppercased the glyphs
+       KaTeX renders inside them (lambda_2 came out as Lambda_2). Math must
+       never inherit a case transform. */
+    .katex, .katex * { text-transform: none; }
+    a.ref:hover { border-bottom-color: var(--accent); }
+
+    /* ── Abstract ────────────────────────────────────── */
+    .abstract-box {
+      background: var(--paper-2);
+      border: 1px solid var(--rule);
+      border-left: 3px solid var(--accent);
+      padding: 1.5rem 1.85rem;
+      border-radius: 0 2px 2px 0;
+    }
+    .abstract-box .section-label { margin-bottom: 0.9rem; color: var(--accent); }
+
+    /* ── Step list ───────────────────────────────────── */
+    .step-list {
+      list-style: none;
+      counter-reset: step;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      margin: 1.5rem 0 0;
+    }
+    /* The counter is positioned out of flow rather than made a flex sibling:
+       with `display: flex` on the li, every inline child (KaTeX spans, <em>)
+       became its own flex item and the gap tore the sentence apart. */
+    .step-list li {
+      counter-increment: step;
+      position: relative;
+      padding-left: 3rem;
+    }
+    .step-list li::before {
+      content: counter(step);
+      position: absolute;
+      left: 0;
+      top: 0.34em;
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      font-weight: 500;
+      color: var(--paper);
+      background: var(--accent);
+      border-radius: 50%;
+      width: 1.75em;
+      height: 1.75em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ── Stat callout ────────────────────────────────── */
+    /* `auto-fit` could lay 3 stats into 2 columns, leaving a 4th cell empty
+       that showed through as a bare rule-coloured block. Column auto-flow
+       creates exactly one track per stat, so no cell is ever empty. */
+    .callout {
+      display: grid;
+      grid-auto-flow: column;
+      grid-auto-columns: 1fr;
+      gap: 1px;
+      background: var(--rule);
+      border: 1px solid var(--rule);
+      border-radius: 2px;
+      overflow: clip;
+      margin: 2rem 0;
+    }
+    .callout .stat {
+      background: var(--paper);
+      padding: 1.4rem 1.6rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+    .callout .stat.highlight { background: var(--accent-light); }
+    .stat-label {
+      font-family: var(--mono);
+      font-size: 0.66rem;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+    }
+    .stat-value { font-family: var(--serif); font-size: 1.5rem; line-height: 1.2; color: var(--ink); }
+    .stat-value.long { font-size: 1.12rem; line-height: 1.45; }
+    .stat-note  { font-size: 0.88rem; color: var(--ink-3); line-height: 1.5; }
+
+    /* ── Certificate chain ───────────────────────────── */
+    .chain {
+      background: var(--paper-2);
+      border: 1px solid var(--rule);
+      border-radius: 2px;
+      padding: 1.5rem 1.75rem;
+      margin: 2rem 0;
+      text-align: center;
+    }
+    .chain .chain-eq { font-size: 1.05rem; overflow-x: auto; }
+    .chain .chain-note {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+      margin-top: 0.9rem;
+    }
+
+    /* ── Math blocks ─────────────────────────────────── */
+    .math-block {
+      margin: 1.75rem 0;
+      padding: 1.25rem 1.5rem;
+      background: var(--paper-2);
+      border: 1px solid var(--rule-soft);
+      border-radius: 2px;
+      overflow-x: auto;
+    }
+    .math-block .tag {
+      display: block;
+      font-family: var(--mono);
+      font-size: 0.66rem;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.6rem;
+    }
+
+
+    .plate-link { display: block; position: relative; text-decoration: none; cursor: zoom-in; }
+    .plate-link .plate { transition: border-color 0.2s; }
+    .plate-link:hover .plate,
+    .plate-link:focus-visible .plate { border-color: var(--accent-rule); }
+    .plate-link::after {
+      content: "Full size";
+      position: absolute;
+      right: 0.75rem;
+      bottom: 0.75rem;
+      font-family: var(--mono);
+      font-size: 0.6rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      background: var(--paper);
+      border: 1px solid var(--accent-rule);
+      border-radius: 2px;
+      padding: 0.2em 0.6em;
+      opacity: 0;
+      transition: opacity 0.2s;
+      pointer-events: none;
+    }
+    .plate-link:hover::after,
+    .plate-link:focus-visible::after { opacity: 1; }
+
+    /* ── Figures ─────────────────────────────────────── */
+    .figure-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1.75rem 1.5rem;
+      margin: 2rem 0 1.25rem;
+    }
+    .figure-grid figure { margin: 0; }
+
+    /* The exported plots have an opaque white canvas, which reads as a bright
+       rectangle against the parchment. The plate carries the paper tone and
+       texture, and `mix-blend-mode: multiply` drops the plot's white to that
+       tone while leaving the ink and line colors intact. `isolation: isolate`
+       pins the blend group to the plate, so the result does not depend on
+       which ancestor happens to create a stacking context. */
+    .plate {
+      background-color: var(--paper);
+      background-image:
+        repeating-linear-gradient(135deg,
+          rgba(26,24,20,0.020) 0px, rgba(26,24,20,0.020) 1px,
+          transparent 1px, transparent 8px);
+      border: 1px solid var(--rule-soft);
+      border-radius: 2px;
+      padding: 0.55rem 0.65rem;
+      isolation: isolate;
+    }
+    .plate img {
+      width: 100%;
+      display: block;
+      mix-blend-mode: multiply;
+    }
+    .subcap {
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.5rem;
+    }
+    figcaption {
+      font-family: var(--serif);
+      font-size: 0.92rem;
+      color: var(--ink-3);
+      margin-top: 0.6rem;
+      line-height: 1.55;
+      text-align: left;
+    }
+    .fig-caption {
+      font-size: 0.92rem;
+      color: var(--ink-3);
+      line-height: 1.6;
+      border-top: 1px solid var(--rule-soft);
+      padding-top: 0.9rem;
+    }
+    .fig-caption strong { color: var(--ink-2); font-weight: 500; }
+
+    /* ── BibTeX ──────────────────────────────────────── */
+    pre {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      line-height: 1.7;
+      background: var(--shell-2);
+      color: #e6e0d4;
+      padding: 1.4rem 1.6rem;
+      border-radius: 2px;
+      overflow-x: auto;
+      tab-size: 2;
+    }
+    code { font-family: var(--mono); font-size: 0.9em; }
+    p code, li code {
+      background: var(--paper-3);
+      border: 1px solid var(--rule-soft);
+      border-radius: 2px;
+      padding: 0.05em 0.35em;
+      font-size: 0.8em;
+    }
+
+    /* ── Footer ──────────────────────────────────────── */
+    footer {
+      background: var(--paper-2);
+      border-top: 1px solid var(--rule);
+      padding: clamp(2rem, 4vw, 3rem) var(--container-pad);
+    }
+    .footer-inner {
+      width: min(100%, var(--container-max));
+      margin-inline: auto;
+      padding-inline: var(--content-gutter);
+      font-size: 0.88rem;
+      color: var(--ink-3);
+      line-height: 1.65;
+    }
+    .footer-inner .section-label { margin-bottom: 0.7rem; }
+    .footer-meta {
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+      margin-top: 1.5rem;
+      padding-top: 1.25rem;
+      border-top: 1px solid var(--rule);
+    }
+
+    /* tighten the nav so all seven items still fit inside the guide lines
+       at tablet widths instead of overflowing onto them */
+    @media (max-width: 1000px) {
+      nav a { font-size: 0.62rem; padding: 0.9em 0.6em; letter-spacing: 0.1em; }
+    }
+
+    /* ── Lightbox ────────────────────────────────────────
+       Clicking a figure opens it over the page instead of navigating away.
+       Closes on the button, on the backdrop, or on Escape. Lives outside
+       .paper, which clips and isolates its children. */
+    .lightbox {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      padding: clamp(1rem, 4vw, 3rem);
+      background: rgba(22, 19, 15, 0.96);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.22s ease, visibility 0.22s;
+    }
+    .lightbox[data-open="true"] { opacity: 1; visibility: visible; }
+
+    .lightbox-figure {
+      max-width: min(1500px, 94vw);
+      max-height: 84vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: var(--paper);
+      border-radius: 2px;
+      padding: 0.75rem;
+      overflow: hidden;
+      transform: scale(0.985);
+      transition: transform 0.22s ease;
+    }
+    .lightbox[data-open="true"] .lightbox-figure { transform: scale(1); }
+
+    .lightbox-figure img {
+      display: block;
+      max-width: 100%;
+      max-height: 100%;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      mix-blend-mode: multiply;
+    }
+
+    /* Captions carry prose and rendered math together, so they are set in the
+       page serif. Mono with tracking would space the math glyphs apart. */
+    .lightbox-caption {
+      max-width: min(1050px, 94vw);
+      margin: 0;
+      font-family: var(--serif);
+      font-size: 0.95rem;
+      line-height: 1.6;
+      letter-spacing: normal;
+      color: #c9c0b0;
+      text-align: center;
+    }
+    .lightbox-caption strong { color: #ece6da; font-weight: 500; }
+    .lightbox-caption .katex { color: #ece6da; letter-spacing: normal; }
+
+    .lightbox-close {
+      position: absolute;
+      top: clamp(0.75rem, 2vw, 1.5rem);
+      right: clamp(0.75rem, 2vw, 1.5rem);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5em;
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #e8e2d6;
+      background: transparent;
+      border: 1px solid rgba(232, 226, 214, 0.35);
+      border-radius: 2px;
+      padding: 0.5em 0.9em;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s, color 0.2s;
+    }
+    .lightbox-close:hover,
+    .lightbox-close:focus-visible {
+      background: #e8e2d6;
+      border-color: #e8e2d6;
+      color: var(--ink);
+    }
+
+    .lightbox-hint {
+      font-family: var(--mono);
+      font-size: 0.6rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #8d8474;
+    }
+
+    body.lightbox-open { overflow: hidden; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .lightbox, .lightbox-figure { transition: none; }
+      .lightbox-figure { transform: none; }
+    }
+
+    @media (max-width: 900px) {
+      .callout { grid-auto-flow: row; grid-auto-columns: auto; }
+    }
+
+    @media (max-width: 720px) {
+      :root { --content-gutter: 0px; }
+      .callout { grid-auto-flow: row; grid-auto-columns: auto; }
+      nav { justify-content: flex-start; }
+      nav ul { margin-inline: 0; }
+      .figure-grid { grid-template-columns: 1fr; }
+      .bracket { display: none; }
+      .corner  { display: none; }
+      .paper::before, .paper::after { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="paper">
+
+  <!-- ═════════════════════════════════════════ HEADER ═══ -->
+  <header>
+    <span class="bracket tl"></span>
+    <span class="bracket tr"></span>
+    <span class="bracket bl"></span>
+    <span class="bracket br"></span>
+
+    <div class="venue-tag">EUSIPCO 2026 &nbsp;·&nbsp; Accepted</div>
+
+    <h1><span class="line">Cost-aware Graph Augmentation for Robust Networks</span><span class="line">via <span class="title-accent">Effective Resistance</span></span></h1>
+
+    <div class="authors">
+      <a href="https://omkarbhoite25.github.io" target="_blank" rel="noopener">Omkar Bhoite</a><sup>†</sup>,
+      V Sateeshkrishna Dhuli<sup>†</sup>,
+      <a href="https://www.ntnu.edu/employees/stefan.werner" target="_blank" rel="noopener">Stefan Werner</a><sup>†,★</sup>,
+      <a href="https://www.ntnu.edu/employees/kimmo.kansanen" target="_blank" rel="noopener">Kimmo Kansanen</a><sup>†</sup>
+    </div>
+
+    <div class="affiliation"><sup>†</sup> Department of Electronic Systems, Norwegian University of Science and Technology, Trondheim, Norway</div>
+    <div class="affiliation"><sup>★</sup> Department of Information and Communication Engineering, Aalto University, Espoo, Finland</div>
+
+    <div class="buttons">
+      <span class="btn btn-disabled" aria-disabled="true" title="The paper goes live here once it is on arXiv">Paper &nbsp;·&nbsp; arXiv soon</span>
+      <a class="btn btn-secondary" href="#bibtex">BibTeX</a>
+    </div>
+
+    <div class="venue-detail">34th European Signal Processing Conference &nbsp;·&nbsp; Bruges, Belgium &nbsp;·&nbsp; 31 August to 4 September 2026</div>
+  </header>
+
+  <!-- ════════════════════════════════════════════ NAV ═══ -->
+  <nav>
+    <ul>
+      <li><a href="#abstract">Abstract</a></li>
+      <li><a href="#problem">Problem</a></li>
+      <li><a href="#relaxation">Relaxation</a></li>
+      <li><a href="#cone">Cone Program</a></li>
+      <li><a href="#greedy">Greedy</a></li>
+      <li><a href="#results">Results</a></li>
+      <li><a href="#bibtex">BibTeX</a></li>
+    </ul>
+  </nav>
+
+  <main>
+
+    <!-- ══════════════════════════════════════ ABSTRACT ═══ -->
+    <section id="abstract">
+      <span class="corner tl"></span><span class="corner tr"></span>
+      <div class="abstract-box">
+        <div class="section-label">Abstract</div>
+        <p>Enhancing the robustness of deployed communication and transportation networks against failures and disruptions is critical for reliable operation. We quantify total effective resistance as a tractable robustness proxy and seek to reduce it by adding new links to the network. However, in many applications, this leads to a computationally challenging joint design problem that couples discrete edge selection with continuous weight allocation, while accounting for heterogeneous per-unit link costs. We address this selection-and-sizing combinatorial problem for augmenting a given weighted base graph, and obtain a semidefinite relaxation that yields a convex certificate-producing surrogate. The relaxation is recast as a standard cone program and solved efficiently using a first-order operator-splitting method. A rounding procedure over the relaxed solution yields a feasible discrete design with an <em>a posteriori</em> optimality gap. As a scalable baseline, we also propose a greedy algorithm that exploits rank-one updates to accelerate candidate evaluation. Experiments on synthetic and real networks demonstrate that the method produces cost-aware augmentations that significantly reduce effective resistance under a global budget constraint.</p>
+      </div>
+
+      <h3>Index terms</h3>
+      <p>Network robustness &nbsp;·&nbsp; total effective resistance &nbsp;·&nbsp; semidefinite programming &nbsp;·&nbsp; operator splitting &nbsp;·&nbsp; Sherman-Morrison rank-one update.</p>
+    </section>
+
+    <!-- ═══════════════════════════════════════ PROBLEM ═══ -->
+    <section id="problem">
+      <span class="corner tl"></span><span class="corner tr"></span>
+      <div class="section-label">01 / Setting</div>
+      <h2>Augmenting a network that is already deployed</h2>
+
+      <p>Network robustness is central to the design and operation of transportation, communication, and brain networks. A principled way to quantify it is through spectral measures of the graph Laplacian, and among these the <em>total effective resistance</em> (Kirchhoff index) is widely adopted. Defined as the sum of reciprocals of the nonzero Laplacian eigenvalues, its evaluation and optimization rely on Laplacian pseudoinverses, which become a computational bottleneck on large graphs.</p>
+
+      <p>We work in the <em>augmentation</em> regime. The base graph $\mathcal G(V, E_{\mathrm b}, \mathbf W_{\mathrm b})$ is already operational: its edges and weights are <em>immutable</em>. The design variables are restricted to selecting and sizing a small number of <em>new</em> links from a candidate set $E_{\mathrm c}$, so every upgrade decision is judged by its marginal impact on the running network. Because the base Laplacian reshapes both the objective landscape and the cost-weight trade-off, optimizing the candidate set in isolation and then superimposing it can be suboptimal.</p>
+
+      <div class="math-block">
+        <span class="tag">Augmented Laplacian and robustness objective</span>
+        $$\mathbf L_{\mathrm a}(\mathbf w)=\sum_{e\in E_{\mathrm c}} w_e\,\mathbf a_e\mathbf a_e^\top,\qquad \mathbf L(\mathbf w)=\mathbf L_{\mathrm b}+\mathbf L_{\mathrm a}(\mathbf w)$$
+        $$R_{\mathrm{tot}}(\mathbf w)=n\,\operatorname{Tr}\!\Big(\mathbf L(\mathbf w)+\tfrac{\mathbf 1\mathbf 1^\top}{n}\Big)^{-1}-n$$
+      </div>
+
+      <p>Each candidate $e=\{v_i,v_j\}$ carries an incidence vector $\mathbf a_e$, a design weight $w_e \ge 0$ modelling link strength (conductance, bandwidth, inverse delay), and a per-unit deployment cost $c_e > 0$ reflecting length, terrain, or installation overhead. Selecting exactly $k$ links under a global budget $C$ gives a mixed-integer program:</p>
+
+      <div class="math-block">
+        <span class="tag">$(\mathcal P_0)$ &nbsp; Mixed-integer selection and sizing</span>
+        $$\begin{aligned}
+        \underset{\mathbf w,\,\mathbf z}{\text{minimize}}\quad & R_{\mathrm{tot}}(\mathbf w)\\
+        \text{subject to}\quad & \mathbf c^\top \mathbf w \le C,\\
+        & z_i w_{\min} \le w_i \le z_i w_{\max},\quad i=1,\dots,p,\\
+        & \mathbf 1^\top \mathbf z = k,\qquad z_i\in\{0,1\}.
+        \end{aligned}$$
+      </div>
+
+      <p>The perspective box bounds tie weight feasibility to selection: $z_i = 0$ forces $w_i = 0$, while $z_i = 1$ enforces $w_i \in [w_{\min}, w_{\max}]$. The budget constraint couples selection and sizing through cost, and the combinatorial edge selection renders the problem NP-hard.</p>
+
+      <h3>Contributions</h3>
+      <ol class="step-list">
+        <li>A cost-aware formulation of budgeted graph augmentation that jointly selects and sizes exactly $k$ new links on top of an immutable weighted base graph, under heterogeneous per-unit costs.</li>
+        <li>A semidefinite relaxation repurposed as a <em>certificate-producing surrogate</em>, giving a certified lower bound on achievable robustness for each instance.</li>
+        <li>A cone-program reformulation solved by a first-order operator-splitting method, avoiding explicit Laplacian inverses.</li>
+        <li>A rounding-and-repair procedure that returns a feasible discrete design together with an <em>a posteriori</em> relative optimality gap.</li>
+        <li>A cost-aware greedy baseline using Sherman-Morrison rank-one updates for fast marginal-gain evaluation.</li>
+      </ol>
+    </section>
+
+    <!-- ════════════════════════════════════ RELAXATION ═══ -->
+    <section id="relaxation">
+      <span class="corner tl"></span><span class="corner tr"></span>
+      <div class="section-label">02 / Convex surrogate</div>
+      <h2>A relaxation that certifies its own quality</h2>
+
+      <p>Relaxing $\mathbf z \in \{0,1\}^p$ to $[0,1]^p$ is not enough on its own: evaluating $R_{\mathrm{tot}}$ still requires solves with the shifted Laplacian $\mathbf M(\mathbf w) \coloneqq \mathbf L(\mathbf w)+\mathbf 1\mathbf 1^\top/n \succ 0$, at $\mathcal O(n^3)$ worst-case cost, and naive sparsification distorts the Laplacian spectrum. A Schur-complement lift with an auxiliary matrix variable $\mathbf R \succeq 0$ removes every explicit inverse while preserving convexity.</p>
+
+      <div class="math-block">
+        <span class="tag">$(\mathcal P_1)$ &nbsp; Semidefinite relaxation</span>
+        $$\begin{aligned}
+        \underset{\mathbf R,\,\mathbf w,\,\mathbf z}{\text{minimize}}\quad & n\,\operatorname{Tr}(\mathbf R) - n\\
+        \text{subject to}\quad & \mathbf c^\top \mathbf w \le C,\\
+        & z_i w_{\min} \le w_i \le z_i w_{\max},\quad i=1,\dots,p,\\
+        & \mathbf 1^\top \mathbf z = k,\quad 0 \le z_i \le 1,\\
+        & \begin{pmatrix}\mathbf M(\mathbf w) & \mathbf I\\ \mathbf I & \mathbf R\end{pmatrix} \succeq 0,\quad \mathbf R \in \mathbb S_+^{n}.
+        \end{aligned}$$
+      </div>
+
+      <h3>Proposition 1</h3>
+      <p>Assume the base graph is connected, so $\mathbf M(\mathbf w) \succ 0$ for all feasible $\mathbf w$. Then $R^{\mathrm{SDP}}_{\mathrm{tot}} \le R^{\mathrm{MI}}_{\mathrm{tot}}$, and at any optimum $(\mathbf R^\star,\mathbf w^\star,\mathbf z^\star)$ of $(\mathcal P_1)$ we have $\mathbf R^\star = \mathbf M^{-1}(\mathbf w^\star)$. The linear matrix inequality is equivalent to $\mathbf R \succeq \mathbf M^{-1}(\mathbf w)$ by the Schur complement, and since $\operatorname{Tr}(\mathbf R - \mathbf M^{-1}(\mathbf w)) \ge 0$, minimizing $n\operatorname{Tr}(\mathbf R)$ forces equality, reproducing the trace-of-inverse objective.</p>
+
+      <h3>Rounding and repair</h3>
+      <p>The relaxation does not return an integer solution, so a feasible design for $(\mathcal P_0)$ is constructed directly from $(\mathbf w^\star, \mathbf z^\star)$: take the $k$ largest entries of $\mathbf z^\star$ (ties broken by smaller unit cost $c_i$) to form $\widehat{\mathbf z}$, project the weights onto the induced box via $\widetilde w_i=\min\{\max(w_i^\star,\,w_{\min}\widehat z_i),\,w_{\max}\widehat z_i\}$, and if the budget is exceeded, scale along the segment toward $w_{\min}\widehat{\mathbf z}$. When $\mathbf c^\top (w_{\min}\widehat{\mathbf z}) > C$ no feasible weights exist for that selection, and one must reduce $k$, raise $C$, or swap out the most expensive edges.</p>
+
+      <div class="chain">
+        <div class="chain-eq">$$R_{\mathrm{tot}}^{\mathrm{SDP}}=\mathrm{val}(\mathcal P_1)\ \le\ \mathrm{val}(\mathcal P_0)=R_{\mathrm{tot}}^{\mathrm{MI}}\ \le\ R_{\mathrm{tot}}(\widehat{\mathbf w}) \eqqcolon R_{\mathrm{tot}}^{\mathrm{RND}}$$</div>
+        <div class="chain-note">Relative gap &nbsp;$(R_{\mathrm{tot}}^{\mathrm{RND}}-R_{\mathrm{tot}}^{\mathrm{SDP}})/R_{\mathrm{tot}}^{\mathrm{SDP}}$&nbsp; is reported per instance</div>
+      </div>
+
+      <p>The lower bound from the relaxation and the upper bound from any feasible rounded design bracket the true optimum, so the gap ratio is an instance-wise measure of solution quality rather than a worst-case guarantee.</p>
+    </section>
+
+    <!-- ══════════════════════════════════════════ CONE ═══ -->
+    <section id="cone">
+      <span class="corner tl"></span><span class="corner tr"></span>
+      <div class="section-label">03 / Solver</div>
+      <h2>Cone-program reformulation and operator splitting</h2>
+
+      <p>Problem $(\mathcal P_1)$ is converted into an equivalent standard cone program by applying the scaled vectorization $\operatorname{svec}(\cdot)$ to the symmetric variables, with off-diagonal entries scaled by $\sqrt 2$ so that trace inner products are preserved. The block LMI becomes an affine map plus a PSD slack $\mathbf S_{\mathrm{SDP}} \in \mathbb S_+^{2n}$, and $\mathbf s_{\mathrm{SDP}} \coloneqq \operatorname{svec}(\mathbf S_{\mathrm{SDP}})$ enters the standard cone form. The resulting cone program is solved with a first-order operator-splitting method, which handles large-scale instances at a much lower per-iteration cost, at the expense of more iterations to reach high accuracy.</p>
+
+      <div class="callout">
+        <div class="stat">
+          <span class="stat-label">Objective</span>
+          <span class="stat-value">$n\,\operatorname{Tr}(\mathbf R) - n$</span>
+          <span class="stat-note">Linear in the lifted variable; no Laplacian inverse ever formed.</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Cone structure</span>
+          <span class="stat-value">$\mathbb S_+^{2n} \times \mathbb R_+^{m}$</span>
+          <span class="stat-note">One PSD block from the Schur LMI, plus the budget, box, and cardinality rows.</span>
+        </div>
+        <div class="stat highlight">
+          <span class="stat-label">Method</span>
+          <span class="stat-value">Operator splitting</span>
+          <span class="stat-note">First-order conic solver; low per-iteration cost, scales to large candidate sets.</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════ GREEDY ═══ -->
+    <section id="greedy">
+      <span class="corner tl"></span><span class="corner tr"></span>
+      <div class="section-label">04 / Fast baseline</div>
+      <h2>Greedy augmentation with rank-one updates</h2>
+
+      <p>As a fast feasible baseline, edges are added sequentially, each step choosing the candidate with the largest predicted marginal decrease in $R_{\mathrm{tot}}$. Adding $e=(v_i,v_j)$ with incidence $\mathbf a \coloneqq \mathbf e_{v_i}-\mathbf e_{v_j}$ and weight $w \ge 0$ gives $\mathbf M' = \mathbf M(\mathbf w) + w\,\mathbf a\mathbf a^\top$, and the Sherman-Morrison identity makes the update explicit.</p>
+
+      <div class="math-block">
+        <span class="tag">Rank-one update and closed-form marginal gain</span>
+        $$\mathbf M'^{-1} = \mathbf M^{-1} - \frac{w}{1+w\,\mathbf a^\top \mathbf M^{-1}\mathbf a}\,(\mathbf M^{-1}\mathbf a)(\mathbf M^{-1}\mathbf a)^\top$$
+        $$\Delta R_{\mathrm{tot}} = \frac{n\,w\,b^{2}(v_i,v_j)}{1+w\,r(v_i,v_j)},\qquad r \coloneqq \mathbf a^\top \mathbf M^{-1}\mathbf a,\quad b^{2} \coloneqq \|\mathbf M^{-1}\mathbf a\|_2^2$$
+      </div>
+
+      <p>Trial weights follow a cost-aware provisional spend $s \coloneqq C_{\mathrm{rem}}/k_{\mathrm{rem}}$, clamped to the admissible interval as $w_{(v_i,v_j)} \coloneqq \max\{w_{\min},\min\{w_{\max},\,s/c_{(v_i,v_j)}\}\}$. The procedure repeats until $k$ edges are added or the budget can no longer cover any remaining candidate at $w_{\min}$.</p>
+
+      <div class="callout">
+        <div class="stat">
+          <span class="stat-label">Initial inverse</span>
+          <span class="stat-value">$\mathcal O(n^{3})$</span>
+          <span class="stat-note">One factorization of the shifted Laplacian $\mathbf M_0$.</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Per step</span>
+          <span class="stat-value">$\mathcal O(pn + n^{2})$</span>
+          <span class="stat-note">Scan all remaining candidates, then a single rank-one update.</span>
+        </div>
+        <div class="stat highlight">
+          <span class="stat-label">Total</span>
+          <span class="stat-value">$\mathcal O(n^{3}) + \mathcal O(k(pn + n^{2}))$</span>
+          <span class="stat-note">Heuristic for $(\mathcal P_0)$; each gain is exact, quality judged against the $(\mathcal P_1)$ bound.</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════ RESULTS ═══ -->
+    <section id="results">
+      <span class="corner tl"></span><span class="corner tr"></span>
+      <div class="section-label">05 / Experiments</div>
+      <h2>Synthetic spatial graphs and a real road network</h2>
+
+      <h3>Setup</h3>
+      <p>The synthetic instance is an undirected weighted base graph with $n=100$ vertices at fixed planar coordinates. Base weights are lognormal, $\ln Z \sim \mathcal N(0,1)$, modelling the skewed capacity statistics common in spatial networks; candidate weights are bounded by $w_{\min}=Q_{0.75}$ and $w_{\max}=Q_{0.95}$ of that same distribution, so added links represent engineered upgrades. The candidate set is built by $k$-means partitioning of the coordinates into $K=3$ regions, taking intra-region $k_{\mathrm{in}}=3$ nearest-neighbor links plus a sparse inter-region backbone, which reproduces the hub-and-spoke structure of practical network design.</p>
+
+      <p>Costs follow a fixed-charge network design model, $\mathbf c = c_{\mathrm{fixed}}\mathbf 1 + \beta\,\mathbf d_c$, where $c_{\mathrm{fixed}}=1.5$ is the per-link overhead and $\beta=0.6$ scales the length penalty. Entries of $\mathbf d_c$ are normalized lengths $d_e/\bar d$, keeping units consistent across instances.</p>
+
+      <p>Budgets are deduced from the cost structure rather than fixed a priori. With $C_{\min}(k) \coloneqq w_{\min}\sum_{i=1}^{k} c_{(i)}$ over the $k$ cheapest candidates, five levels are centred on the anchor $C_{\min}(k_{\max})$: two at the feasibility thresholds of roughly $\tfrac13 k_{\max}$ and $\tfrac23 k_{\max}$, and two above the anchor at $1.5\times$ and $2.5\times$. This spans tightly constrained to essentially unconstrained regimes regardless of graph geometry.</p>
+
+      <div class="callout">
+        <div class="stat">
+          <span class="stat-label">Budget levels</span>
+          <span class="stat-value long">$C \in \{137.06,\,251.69,\,373.89,\,560.84,\,934.73\}$</span>
+          <span class="stat-note">Derived from the candidate cost structure, not chosen by hand.</span>
+        </div>
+        <div class="stat highlight">
+          <span class="stat-label">Anchor</span>
+          <span class="stat-value">$C = 373.89$</span>
+          <span class="stat-note">Minimum cost of installing all $k_{\max}=100$ edges at weight $w_{\min}$.</span>
+        </div>
+      </div>
+
+      <h3>Bounds, feasibility, and the cost trade-off</h3>
+      <div class="figure-grid">
+        <figure>
+          <div class="subcap">(a) &nbsp; SDP lower bound vs $k$</div>
+          <a class="plate-link" href="static/figures/R_tot_SDP_vs_k_cfixed=1.5_beta=0.6.png"><div class="plate"><img src="static/figures/R_tot_SDP_vs_k_cfixed=1.5_beta=0.6.png" alt="Total effective resistance from the SDP relaxation plotted against the number of added edges k, for five strategic budget levels." /></div></a>
+        </figure>
+        <figure>
+          <div class="subcap">(b) &nbsp; Feasible region</div>
+          <a class="plate-link" href="static/figures/Feasibility_Region.png"><div class="plate"><img src="static/figures/Feasibility_Region.png" alt="Feasible region of the budgeted augmentation problem at budget cap C = 560.84." /></div></a>
+        </figure>
+        <figure>
+          <div class="subcap">(c) &nbsp; Relative optimality gap</div>
+          <a class="plate-link" href="static/figures/Optimality_Gap_cfixed=1.5_beta=0.6.png"><div class="plate"><img src="static/figures/Optimality_Gap_cfixed=1.5_beta=0.6.png" alt="Relative gap between the rounded discrete design and the SDP lower bound, plotted against k for the strategic budgets." /></div></a>
+        </figure>
+        <figure>
+          <div class="subcap">(d) &nbsp; Pareto front</div>
+          <a class="plate-link" href="static/figures/Pareto_Front_cfixed=1.5_beta=0.6.png"><div class="plate"><img src="static/figures/Pareto_Front_cfixed=1.5_beta=0.6.png" alt="Pareto front of rounded total effective resistance against spent budget for fixed k across cap budgets." /></div></a>
+        </figure>
+      </div>
+      <p class="fig-caption"><strong>Figure 1.</strong> (a) $R_{\mathrm{tot}}^{\mathrm{SDP}}$ versus $k$. (b) Feasible region at $C=560.84$. (c) Relative gap $(R_{\mathrm{tot}}^{\mathrm{RND}}-R_{\mathrm{tot}}^{\mathrm{SDP}})/R_{\mathrm{tot}}^{\mathrm{SDP}}$ versus $k$ for the strategic budgets. (d) Pareto front: $R_{\mathrm{tot}}^{\mathrm{RND}}$ versus spent budget for fixed $k$, across cap budgets.</p>
+
+      <h3>Comparison against the greedy baseline</h3>
+      <div class="figure-grid">
+        <figure>
+          <div class="subcap">(a) &nbsp; California road network</div>
+          <a class="plate-link" href="static/figures/R_tot_vs_k_plot_CA.png"><div class="plate"><img src="static/figures/R_tot_vs_k_plot_CA.png" alt="Total effective resistance from the SDP relaxation versus k on a 500-node subgraph of the California road network, swept over the cost parameter beta." /></div></a>
+        </figure>
+        <figure>
+          <div class="subcap">(b) &nbsp; $C = 251.69$</div>
+          <a class="plate-link" href="static/figures/Total_Effective_Resistance_Comparison33.png"><div class="plate"><img src="static/figures/Total_Effective_Resistance_Comparison33.png" alt="Relaxed, rounded, and greedy total effective resistance versus k at budget 251.69, with an infeasible region shaded." /></div></a>
+        </figure>
+        <figure>
+          <div class="subcap">(c) &nbsp; $C = 373.89$</div>
+          <a class="plate-link" href="static/figures/Total_Effective_Resistance_Comparison22.png"><div class="plate"><img src="static/figures/Total_Effective_Resistance_Comparison22.png" alt="Relaxed, rounded, and greedy total effective resistance versus k at the anchor budget 373.89." /></div></a>
+        </figure>
+        <figure>
+          <div class="subcap">(d) &nbsp; $C = 560.84$</div>
+          <a class="plate-link" href="static/figures/Total_Effective_Resistance_Comparison11.png"><div class="plate"><img src="static/figures/Total_Effective_Resistance_Comparison11.png" alt="Relaxed, rounded, and greedy total effective resistance versus k at budget 560.84." /></div></a>
+        </figure>
+      </div>
+      <p class="fig-caption"><strong>Figure 2.</strong> (a) Real-world California road network. Synthetic random spatial network at three strategic budgets: (b) $C=251.69$, (c) $C=373.89$, (d) $C=560.84$.</p>
+
+      <h3>What the experiments show</h3>
+      <p>Across budgets the SDP relaxation supplies a lower bound that falls rapidly for small $k$ and then saturates as the marginal gain per edge diminishes. As the budget tightens, two effects appear: the relaxation stays feasible for all $k$ at large budgets but becomes infeasible from $k=80$ onward at $C=251.69$, and the greedy method exhausts its budget after only $61$ edges at that level, against the full $k_{\max}=100$ at $C=560.84$. At the anchor budget all methods remain feasible but operate near the boundary, where the relaxation curve flattens and then rises for large $k$ because the budget pushes many added edges toward $w_{\min}$ and dilutes their marginal benefit. Shaded regions and bold cross markers mark the $k$-values where even $w_{\min}$ on every selected edge exceeds the budget, so the solver declares infeasibility and returns no improving solution.</p>
+
+      <p>On real data, a $500$-node sample of the largest connected component of the California road network with unit base weights and candidate weights in $[1,5]$ shows $R_{\mathrm{tot}}^{\mathrm{SDP}}$ decreasing monotonically in $k$ before flattening. Raising the length-penalty scale $\beta$ lifts the whole curve; for $\beta \in \{9,10\}$ it starts bending upward as the solution drives many candidate weights to $w_{\min}$, and at $\beta = 10$ adding $20$ edges already renders $(\mathcal P_1)$ infeasible.</p>
+
+      <p>Together the results confirm that the strategically derived budget levels capture the three regimes of interest: budget-relaxed, marginally feasible, and budget-constrained. The greedy baseline does not improve on the rounded objective, but it reaches a feasible design at a fraction of the runtime.</p>
+    </section>
+
+    <!-- ═════════════════════════════════════════ BIBTEX ═══ -->
+    <section id="bibtex">
+      <span class="corner tl"></span><span class="corner tr"></span>
+      <div class="section-label">Citation</div>
+      <h2>BibTeX</h2>
+      <pre><code>@inproceedings{bhoite2026costaware,
+  title     = {Cost-aware graph augmentation for robust networks
+               via effective resistance},
+  author    = {Bhoite, Omkar and Dhuli, V Sateeshkrishna and
+               Werner, Stefan and Kansanen, Kimmo},
+  booktitle = {Proc. Eur. Signal Process. Conf.},
+  address   = {Bruges, Belgium},
+  year      = {2026},
+  note      = {Accepted}
+}</code></pre>
+    </section>
+
+  </main>
+
+  <!-- ═════════════════════════════════════════ FOOTER ═══ -->
+  <footer>
+    <div class="footer-inner">
+      <div class="section-label">Acknowledgement</div>
+      <p>This work is supported in part by the MoST (MobilitetsLab Stor-Trondheim) project, and the PERSEUS project, a European Union's Horizon 2020 research and innovation program under the Marie Skłodowska-Curie grant agreement No 101034240, and the Research Council of Norway under the project "Resource-aware IoT with Enhanced Intelligence and Security."</p>
+      <div class="footer-meta">Department of Electronic Systems &nbsp;·&nbsp; NTNU Trondheim &nbsp;·&nbsp; Aalto University</div>
+    </div>
+  </footer>
+
+</div>
+
+<!-- ═══════════════════════════════════════════ LIGHTBOX ═══ -->
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Figure viewer" data-open="false">
+  <button type="button" class="lightbox-close" id="lightbox-close" aria-label="Close figure viewer">Close &times;</button>
+  <div class="lightbox-figure">
+    <img id="lightbox-img" src="" alt="" />
+  </div>
+  <p class="lightbox-caption" id="lightbox-caption"></p>
+  <p class="lightbox-hint">Esc or click outside to close</p>
+</div>
+
+<script>
+  // Highlight the nav entry for the section currently in view.
+  const navLinks = [...document.querySelectorAll('nav a')];
+  const sections = navLinks
+    .map(a => document.querySelector(a.getAttribute('href')))
+    .filter(Boolean);
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      navLinks.forEach(a => a.classList.remove('active'));
+      const link = navLinks.find(a => a.getAttribute('href') === '#' + entry.target.id);
+      if (link) link.classList.add('active');
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+
+  sections.forEach(s => observer.observe(s));
+  // ── Figure lightbox ────────────────────────────────────────────────
+  // Each figure is a real link to its own file, so middle-click and
+  // ctrl/cmd-click still open it in a tab and the page works without JS.
+  // A plain click opens it over the page instead.
+  (function () {
+    const box     = document.getElementById('lightbox');
+    const boxImg  = document.getElementById('lightbox-img');
+    const boxCap  = document.getElementById('lightbox-caption');
+    const closeBtn = document.getElementById('lightbox-close');
+    if (!box) return;
+
+    let lastFocus = null;
+
+    function open(src, alt, caption) {
+      lastFocus = document.activeElement;
+      boxImg.src = src;
+      boxImg.alt = alt || '';
+      boxCap.replaceChildren();
+      if (caption) boxCap.appendChild(caption);
+      boxCap.hidden = !caption;
+      box.dataset.open = 'true';
+      document.body.classList.add('lightbox-open');
+      closeBtn.focus();
+    }
+
+    function close() {
+      box.dataset.open = 'false';
+      document.body.classList.remove('lightbox-open');
+      // drop the source once the fade is done so the next open cannot flash
+      // the previous figure
+      setTimeout(function () {
+        if (box.dataset.open === 'false') { boxImg.src = ''; }
+      }, 240);
+      if (lastFocus && lastFocus.focus) lastFocus.focus();
+    }
+
+    // The caption is whatever the figure already says on the page. Clone the
+    // rendered nodes rather than reading textContent: a caption holding KaTeX
+    // flattens into raw TeX plus the hidden MathML mirror, so
+    // "$R_{tot}^{SDP}$" comes out as its own source three times over.
+    function captionFor(link) {
+      const fig = link.closest('figure');
+      if (!fig) return null;
+
+      const parts = [];
+      const own = fig.querySelector('figcaption');
+      if (own) {
+        parts.push(own);
+      } else {
+        const sub = fig.querySelector('.subcap');
+        if (sub) parts.push(sub);
+        // the shared caption is the paragraph directly after the figure's row,
+        // not merely the first one in the section, which would pick up the
+        // wrong figure's text when a section carries several
+        const row = fig.parentElement;
+        const next = row && row.nextElementSibling;
+        if (next && next.classList.contains('fig-caption')) parts.push(next);
+      }
+      if (!parts.length) return null;
+
+      const frag = document.createDocumentFragment();
+      parts.forEach(function (el, i) {
+        if (i) frag.appendChild(document.createTextNode(' \u00b7 '));
+        const copy = el.cloneNode(true);
+        while (copy.firstChild) frag.appendChild(copy.firstChild);
+      });
+      return frag;
+    }
+
+    document.querySelectorAll('.plate-link').forEach(function (link) {
+      link.addEventListener('click', function (e) {
+        // leave modified clicks to the browser
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+        e.preventDefault();
+        const img = link.querySelector('img');
+        open(link.getAttribute('href'), img && img.alt, captionFor(link));
+      });
+    });
+
+    closeBtn.addEventListener('click', close);
+
+    // clicking the backdrop closes; clicking the figure itself does not
+    box.addEventListener('click', function (e) {
+      if (!e.target.closest('.lightbox-figure') && !e.target.closest('.lightbox-close')) close();
+    });
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && box.dataset.open === 'true') close();
+    });
+  })();
+
+</script>
+
+</body>
+</html>
