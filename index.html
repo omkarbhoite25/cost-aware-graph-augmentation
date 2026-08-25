@@ -377,6 +377,8 @@
     }
     .stat-value { font-family: var(--serif); font-size: 1.5rem; line-height: 1.2; color: var(--ink); max-width: 100%; overflow-x: auto; overflow-y: hidden; }
     .stat-value.long { font-size: 1.12rem; line-height: 1.45; }
+    /* Held on one line, so the size has to track the column width. */
+    .stat-value.tight { font-size: clamp(15px, 1.8vw, 1.25rem); white-space: nowrap; }
     .stat-note  { font-size: 0.88rem; color: var(--ink-3); line-height: 1.5; }
 
     /* ── Certificate chain ───────────────────────────── */
@@ -415,6 +417,31 @@
       text-transform: uppercase;
       color: var(--accent);
       margin-bottom: 0.6rem;
+    }
+    .math-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem 1.5rem;
+      margin-top: 1.15rem;
+      padding-top: 0.9rem;
+      border-top: 1px solid var(--rule-soft);
+      font-size: 0.92rem;
+      color: var(--ink-3);
+    }
+    .math-legend .term {
+      display: flex;
+      align-items: baseline;
+      gap: 0.5rem;
+      min-width: 0;
+    }
+    .math-legend .def { min-width: 0; }
+    .math-legend .sym {
+      flex: none;
+      padding: 0.12rem 0.45rem;
+      background: var(--accent-light);
+      border: 1px solid var(--accent-rule);
+      border-radius: 2px;
+      color: var(--accent);
     }
 
 
@@ -670,10 +697,13 @@
     @media (max-width: 720px) {
       :root { --content-gutter: 0px; }
       .math-block { padding: 1rem 1.05rem; font-size: 0.88rem; }
+      .math-legend { gap: 0.55rem; font-size: 0.85rem; }
+      .math-legend .term { width: 100%; }
       .chain { padding: 1.15rem 1.1rem; }
       .chain .chain-eq { font-size: 0.88rem; }
       .stat-value { font-size: 1.25rem; }
       .stat-value.long { font-size: 0.92rem; }
+      .stat-value.tight { font-size: 1.12rem; }
       .callout .stat { padding: 1.1rem 1.15rem; }
       pre { white-space: pre-wrap; overflow-wrap: anywhere; }
       .callout { grid-auto-flow: row; grid-auto-columns: auto; }
@@ -761,6 +791,10 @@
         <span class="tag">Augmented Laplacian and robustness objective</span>
         $$\mathbf L_{\mathrm a}(\mathbf w)=\sum_{e\in E_{\mathrm c}} w_e\,\mathbf a_e\mathbf a_e^\top,\qquad \mathbf L(\mathbf w)=\mathbf L_{\mathrm b}+\mathbf L_{\mathrm a}(\mathbf w)$$
         $$R_{\mathrm{tot}}(\mathbf w)=n\,\operatorname{Tr}\!\Big(\mathbf L(\mathbf w)+\tfrac{\mathbf 1\mathbf 1^\top}{n}\Big)^{-1}-n$$
+        <div class="math-legend">
+          <span class="term"><span class="sym">$\mathbf L_{\mathrm b}$</span><span class="def">base Laplacian, already deployed and immutable</span></span>
+          <span class="term"><span class="sym">$\mathbf L_{\mathrm a}(\mathbf w)$</span><span class="def">augmentation built from the candidate set $E_{\mathrm c}$</span></span>
+        </div>
       </div>
 
       <p>Each candidate $e=\{v_i,v_j\}$ carries an incidence vector $\mathbf a_e$, a design weight $w_e \ge 0$ modelling link strength (conductance, bandwidth, inverse delay), and a per-unit deployment cost $c_e > 0$ reflecting length, terrain, or installation overhead. Selecting exactly $k$ links under a global budget $C$ gives a mixed-integer program:</p>
@@ -876,7 +910,7 @@
         </div>
         <div class="stat highlight">
           <span class="stat-label">Total</span>
-          <span class="stat-value">$\mathcal O(n^{3}) + \mathcal O(k(pn + n^{2}))$</span>
+          <span class="stat-value tight">$\mathcal O(n^{3} + k(pn + n^{2}))$</span>
           <span class="stat-note">Heuristic for $(\mathcal P_0)$; each gain is exact, quality judged against the $(\mathcal P_1)$ bound.</span>
         </div>
       </div>
