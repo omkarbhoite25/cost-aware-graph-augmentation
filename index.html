@@ -746,7 +746,10 @@
     }
     footer .footer-inner {
       border: 1px solid var(--rule);
-      padding: clamp(1.75rem, 3.5vw, 2.75rem) var(--content-gutter)
+      /* The gutter is the clearance from the vertical guides and drops to 0
+         once those are hidden, so it cannot be the box's own inset as well.
+         The floor keeps the text off the border on narrow screens. */
+      padding: clamp(1.75rem, 3.5vw, 2.75rem) max(var(--content-gutter), 1.35rem)
                clamp(1.5rem, 3vw, 2.25rem);
     }
 
