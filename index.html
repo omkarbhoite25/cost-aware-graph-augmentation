@@ -27,7 +27,6 @@
       --paper-2:      rgba(255, 242, 234, 0.032);
       --paper-3:      rgba(6, 4, 15, 0.55);
       --sheet-scrim:  rgba(9, 5, 17, 0.78);
-      --shell-2:      rgba(6, 3, 12, 0.74);
 
       --ink:          #f7f0ec;
       --ink-2:        #e6dbd5;
@@ -140,13 +139,8 @@
       /* clip, not hidden: hidden would make this a scroll container and
          silently unpin the sticky nav. */
       overflow: clip;
-      box-shadow:
-        0 0 0 1px rgba(147, 190, 208, 0.14),
-        0 24px 80px rgba(3, 6, 11, 0.5);
     }
 
-    /* The sticky bar is part of the sheet, not a pill floating above it,
-       so it carries the same parchment rather than a brighter tint. */
     /* container-lines: vertical guides at the content container edges.
        These hang off .sheet rather than .paper: the sheet is the opaque
        layer, so guides drawn beneath it would be covered. */
@@ -259,7 +253,10 @@
       background: rgba(28, 11, 17, 0.52);
       backdrop-filter: blur(16px) saturate(1.25);
       border-bottom: 1px solid var(--rule);
-      padding: 0 calc(var(--container-pad) + var(--content-gutter));
+      width: min(100% - (var(--container-pad) * 2), var(--container-max));
+      margin-inline: auto;
+      padding: 0 var(--content-gutter);
+      border-radius: 0 0 3px 3px;
       display: flex;
       justify-content: center;
       overflow-x: auto;
@@ -582,8 +579,9 @@
       font-family: var(--mono);
       font-size: 0.78rem;
       line-height: 1.7;
-      background: var(--shell-2);
-      color: #efe0d6;
+      background: var(--paper-2);
+      border: 1px solid var(--rule-soft);
+      color: #f2e6dd;
       padding: 1.4rem 1.6rem;
       border-radius: 2px;
       overflow-x: auto;
@@ -735,13 +733,12 @@
     }
 
     footer {
-      background:
-        radial-gradient(88% 118% at 50% 44%,
-          rgba(6, 4, 15, 0.90) 0%,
-          rgba(6, 4, 15, 0.78) 48%,
-          rgba(6, 4, 15, 0.52) 82%,
-          rgba(6, 4, 15, 0.34) 100%);
+      background: transparent;
       border-top: none;
+    }
+    footer .footer-inner {
+      border-top: 1px solid var(--rule);
+      padding-top: clamp(1.75rem, 3.5vw, 2.75rem);
     }
 
     .btn:focus-visible {
