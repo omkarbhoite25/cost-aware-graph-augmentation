@@ -20,35 +20,35 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      /* dark outer shell */
-      --shell:        #16130f;
-      --shell-2:      #241f18;
+      /* Surfaces stack over the shader field: the sheet is a scrim that keeps
+         prose readable, panels lift off it, and code sits deepest. All are
+         translucent so the field stays visible through the whole page. */
+      --paper:        rgba(255, 242, 234, 0.045);
+      --paper-2:      rgba(255, 242, 234, 0.032);
+      --paper-3:      rgba(6, 4, 15, 0.55);
+      --sheet-scrim:  rgba(9, 5, 17, 0.78);
+      --shell-2:      rgba(6, 3, 12, 0.74);
 
-      /* warm paper interior */
-      --paper:        #faf7f0;
-      --paper-2:      #f2ede2;
-      --paper-3:      #ebe5d8;
+      --ink:          #f7f0ec;
+      --ink-2:        #e6dbd5;
+      --ink-3:        #d6cac5;
+      --rule:         rgba(228, 192, 172, 0.20);
+      --rule-soft:    rgba(228, 192, 172, 0.12);
+      --accent:       #f5bd6e;
+      --accent-light: rgba(245, 189, 110, 0.13);
+      --accent-rule:  rgba(245, 189, 110, 0.36);
 
-      --ink:          #1a1814;
-      --ink-2:        #3d3830;
-      --ink-3:        #7a7060;
-      --rule:         #ddd8ce;
-      --rule-soft:    #e8e3d8;
-      --accent:       #2d5a8e;
-      --accent-light: #e8f0f9;
-      --accent-rule:  #c5d9f0;
+      /* The plots are white-canvas exports composited with
+         `mix-blend-mode: multiply`, so their card stays printed no matter what
+         the rest of the page does. These four tokens are that card. */
+      --plate:        #faf7f0;
+      --plate-ink:    #1a1814;
+      --plate-accent: #2d5a8e;
+      --plate-rule:   #c5d9f0;
 
-      /* atmospheric field: the ground the masthead and colophon sit on, and
-         the type that sits on it. The shader's own ramp is set in the module
-         at the foot of this file and peaks at the document's --accent, so the
-         field reads as an extension of the page rather than an import. */
-      --sh-void:    #05080e;
-      --sh-deep:    #0a1526;
-      --sh-ice:     #93bed0;
-      --sh-type:    #f4f8fb;
-      --sh-type-2:  #cfdde7;
-      --sh-type-3:  #c6d6e1;
-      --sh-line:    rgba(190, 214, 228, 0.22);
+      /* The ground beneath the shader, and the fallback if WebGL is missing.
+         The shader's own ramp is set in the module at the foot of this file. */
+      --sh-void:    #06040f;
 
       --serif:   'EB Garamond', Georgia, serif;
       --display: 'Fraunces', Georgia, serif;
@@ -59,8 +59,8 @@
       /* clear space between the vertical guide lines and the text column,
          so prose never runs into the rules */
       --content-gutter: clamp(1.1rem, 2.6vw, 2.6rem);
-      --line-color:  rgba(26, 24, 20, 0.10);
-      --line-strong: rgba(26, 24, 20, 0.30);
+      --line-color:  rgba(232, 202, 186, 0.11);
+      --line-strong: rgba(232, 202, 186, 0.30);
       --corner-size: 6px;
     }
 
@@ -102,12 +102,12 @@
       inset: 0;
       background:
         radial-gradient(104% 62% at 50% 4%,
-          rgba(5,8,14,0.80) 0%, rgba(5,8,14,0.54) 38%,
-          rgba(5,8,14,0.20) 68%, rgba(5,8,14,0) 92%),
+          rgba(6,4,15,0.80) 0%, rgba(6,4,15,0.54) 38%,
+          rgba(6,4,15,0.20) 68%, rgba(6,4,15,0) 92%),
         linear-gradient(180deg,
-          rgba(5,8,14,0.58) 0%, rgba(5,8,14,0.20) 30%, rgba(5,8,14,0) 56%),
+          rgba(6,4,15,0.58) 0%, rgba(6,4,15,0.20) 30%, rgba(6,4,15,0) 56%),
         linear-gradient(0deg,
-          rgba(5,8,14,0.52) 0%, rgba(5,8,14,0.16) 24%, rgba(5,8,14,0) 48%);
+          rgba(6,4,15,0.52) 0%, rgba(6,4,15,0.16) 24%, rgba(6,4,15,0) 48%);
     }
 
     /* ── Paper shell ─────────────────────────────────── */
@@ -129,29 +129,24 @@
     .sheet {
       position: relative;
       z-index: 1;
-      background-color: var(--paper);
+      /* No scrim. The type sits on the field itself, which is why the ramp
+         below is capped well short of its bright end. */
+      background-color: transparent;
       background-image:
         repeating-linear-gradient(135deg,
-          rgba(26,24,20,0.020) 0px, rgba(26,24,20,0.020) 1px,
+          rgba(190,214,228,0.016) 0px, rgba(190,214,228,0.016) 1px,
           transparent 1px, transparent 8px);
       border-radius: clamp(0px, 1.4vw, 20px);
       /* clip, not hidden: hidden would make this a scroll container and
          silently unpin the sticky nav. */
       overflow: clip;
       box-shadow:
-        0 1px 0 rgba(255, 255, 255, 0.5) inset,
-        0 0 0 1px rgba(147, 190, 208, 0.16),
-        0 6px 34px rgba(45, 90, 142, 0.38),
-        0 26px 80px rgba(5, 8, 14, 0.55);
+        0 0 0 1px rgba(147, 190, 208, 0.14),
+        0 24px 80px rgba(3, 6, 11, 0.5);
     }
 
     /* The sticky bar is part of the sheet, not a pill floating above it,
        so it carries the same parchment rather than a brighter tint. */
-    nav {
-      background: var(--paper);
-      backdrop-filter: none;
-    }
-
     /* container-lines: vertical guides at the content container edges.
        These hang off .sheet rather than .paper: the sheet is the opaque
        layer, so guides drawn beneath it would be covered. */
@@ -256,7 +251,7 @@
       border: 1px solid;
       transition: background 0.2s, color 0.2s, border-color 0.2s;
     }
-    .btn-primary   { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+    .btn-primary   { background: var(--ink); color: #14060f; border-color: var(--ink); }
     .btn-primary:hover { background: var(--accent); border-color: var(--accent); }
     .btn-secondary { background: transparent; color: var(--ink); border-color: var(--rule); }
     .btn-secondary:hover { border-color: var(--ink); }
@@ -274,8 +269,8 @@
       position: sticky;
       top: 0;
       z-index: 20;
-      background: rgba(250,247,240,0.94);
-      backdrop-filter: blur(8px);
+      background: rgba(28, 11, 17, 0.52);
+      backdrop-filter: blur(16px) saturate(1.25);
       border-bottom: 1px solid var(--rule);
       padding: 0 calc(var(--container-pad) + var(--content-gutter));
       display: flex;
@@ -370,6 +365,7 @@
     /* ── Abstract ────────────────────────────────────── */
     .abstract-box {
       background: var(--paper-2);
+      border: 1px solid var(--rule-soft);
       border: 1px solid var(--rule);
       border-left: 3px solid var(--accent);
       padding: 1.5rem 1.85rem;
@@ -526,9 +522,9 @@
       font-size: 0.6rem;
       letter-spacing: 0.12em;
       text-transform: uppercase;
-      color: var(--accent);
-      background: var(--paper);
-      border: 1px solid var(--accent-rule);
+      color: var(--plate-accent);
+      background: var(--plate);
+      border: 1px solid var(--plate-rule);
       border-radius: 2px;
       padding: 0.2em 0.6em;
       opacity: 0;
@@ -554,7 +550,7 @@
        pins the blend group to the plate, so the result does not depend on
        which ancestor happens to create a stacking context. */
     .plate {
-      background-color: var(--paper);
+      background-color: var(--plate);
       background-image:
         repeating-linear-gradient(135deg,
           rgba(26,24,20,0.020) 0px, rgba(26,24,20,0.020) 1px,
@@ -600,7 +596,7 @@
       font-size: 0.78rem;
       line-height: 1.7;
       background: var(--shell-2);
-      color: #e6e0d4;
+      color: #efe0d6;
       padding: 1.4rem 1.6rem;
       border-radius: 2px;
       overflow-x: auto;
@@ -674,7 +670,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      background-color: var(--paper);
+      background-color: var(--plate);
       border-radius: 2px;
       padding: 0.75rem;
       overflow: hidden;
@@ -742,78 +738,35 @@
       color: #8d8474;
     }
 
-    /* ── Masthead and colophon on the field ──────────────
-       These two bands are the only places the page sets type over the
-       shader, so each colour here is chosen against --sh-void rather than
-       against parchment. Everything between them is unchanged. */
+    /* ── Masthead and colophon ───────────────────────────
+       These two bands sit on the bare field with no scrim over them, so each
+       gets a darkening of its own to hold type contrast. Colours come from
+       the global tokens; nothing here needs its own palette. */
     header {
-      /* Holds its darkness out to the affiliation lines, which sit near the
-         bottom of the block and were the tightest contrast case. */
       background:
         radial-gradient(78% 74% at 50% 46%,
-          rgba(5, 8, 14, 0.88) 0%,
-          rgba(5, 8, 14, 0.74) 42%,
-          rgba(5, 8, 14, 0.44) 70%,
-          rgba(5, 8, 14, 0.10) 90%,
-          rgba(5, 8, 14, 0) 100%);
+          rgba(6, 4, 15, 0.88) 0%,
+          rgba(6, 4, 15, 0.74) 42%,
+          rgba(6, 4, 15, 0.44) 70%,
+          rgba(6, 4, 15, 0.10) 90%,
+          rgba(6, 4, 15, 0) 100%);
       border-bottom: none;
-    }
-    header h1 { color: var(--sh-type); }
-    header .title-accent { color: var(--sh-ice); }
-    header .authors { color: var(--sh-type-2); }
-    header .authors a {
-      color: var(--sh-type);
-      text-decoration-color: rgba(238, 243, 247, 0.45);
-    }
-    header .authors a:hover {
-      color: var(--sh-ice);
-      text-decoration-color: var(--sh-ice);
-    }
-    header .authors sup,
-    header .affiliation { color: var(--sh-type-3); }
-    header .bracket { border-color: var(--sh-line); opacity: 1; }
-    header .venue-tag {
-      color: var(--sh-ice);
-      background: rgba(147, 190, 208, 0.07);
-      border-color: rgba(147, 190, 208, 0.28);
-    }
-    header .btn-primary {
-      background: var(--sh-type);
-      color: var(--sh-deep);
-      border-color: var(--sh-type);
-    }
-    header .btn-primary:hover {
-      background: var(--sh-ice);
-      border-color: var(--sh-ice);
-      color: var(--sh-deep);
-    }
-    header .btn-secondary {
-      background: rgba(238, 243, 247, 0.05);
-      color: var(--sh-type-2);
-      border-color: rgba(190, 214, 228, 0.26);
-    }
-    header .btn-secondary:hover {
-      color: var(--sh-type);
-      border-color: var(--sh-type);
-    }
-    header .btn:focus-visible {
-      outline: 2px solid var(--sh-ice);
-      outline-offset: 3px;
     }
 
     footer {
       background:
         radial-gradient(88% 118% at 50% 44%,
-          rgba(5, 8, 14, 0.90) 0%,
-          rgba(5, 8, 14, 0.78) 48%,
-          rgba(5, 8, 14, 0.52) 82%,
-          rgba(5, 8, 14, 0.34) 100%);
+          rgba(6, 4, 15, 0.90) 0%,
+          rgba(6, 4, 15, 0.78) 48%,
+          rgba(6, 4, 15, 0.52) 82%,
+          rgba(6, 4, 15, 0.34) 100%);
       border-top: none;
     }
-    footer .footer-inner { color: var(--sh-type-3); }
-    footer .footer-inner .section-label { color: var(--sh-type-2); }
-    footer .footer-meta { color: rgba(198, 214, 225, 0.78); }
-    footer .footer-inner a { color: var(--sh-type); }
+
+    .btn:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 3px;
+    }
 
     body.lightbox-open { overflow: hidden; }
 
@@ -1304,9 +1257,9 @@
         getShaderColorFromString, getShaderNoiseTexture,
       } = await import('https://cdn.jsdelivr.net/npm/@paper-design/shaders@0.0.80/+esm');
 
-      /* Deep navy through the page's own accent to a single ice highlight,
-         which softness keeps diffuse enough never to read as a glow. */
-      const palette = ['#070d18', '#0b1b30', '#123049', '#1f4a76', '#2d5a8e', '#4a7fa3'];
+      /* The inferno colormap: near-black through plum and crimson to a
+         sparse amber. Softness keeps the hot end diffuse rather than glowing. */
+      const palette = ['#080309', '#180720', '#330f2e', '#541833', '#6e2a28', '#8a3f1e'];
 
       /* The mount reads this texture synchronously and throws if it is not
          decoded yet, so wait for it before constructing. */
@@ -1327,12 +1280,12 @@
         host,
         grainGradientFragmentShader,
         {
-          u_colorBack:    getShaderColorFromString('#05080e'),
+          u_colorBack:    getShaderColorFromString('#06040f'),
           u_colors:       palette.map(getShaderColorFromString),
           u_colorsCount:  palette.length,
-          u_softness:     0.86,
-          u_intensity:    0.22,
-          u_noise:        0.15,
+          u_softness:     0.90,
+          u_intensity:    0.20,
+          u_noise:        0.10,
           u_shape:        1,        /* wave */
           u_noiseTexture: grain,
           u_fit:          0,
