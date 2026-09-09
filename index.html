@@ -89,9 +89,17 @@
     .site-field {
       position: fixed;
       inset: 0;
+      /* A mobile URL bar that collapses on scroll changes the small viewport,
+         which would resize the canvas mid-scroll and force a repaint of the
+         content above it. The large viewport does not move, so pin to that
+         and keep the layer on the compositor. */
+      height: 100vh;
+      height: 100lvh;
       z-index: 0;
       pointer-events: none;
       background: var(--sh-void);
+      transform: translateZ(0);
+      will-change: transform;
     }
     .site-field-canvas { position: absolute; inset: 0; }
     /* Weights the field: quiet and dark across the top, where the masthead
@@ -608,7 +616,8 @@
     footer {
       background: var(--paper-2);
       border-top: 1px solid var(--rule);
-      padding: clamp(2rem, 4vw, 3rem) var(--container-pad);
+      padding: clamp(2rem, 4vw, 3rem) var(--container-pad)
+               calc(clamp(2rem, 4vw, 3rem) + env(safe-area-inset-bottom, 0px));
     }
     .footer-inner {
       width: min(100%, var(--container-max));
@@ -780,6 +789,9 @@
 
     @media (max-width: 720px) {
       :root { --content-gutter: 0px; }
+      /* Reading the backdrop back over the canvas every frame is what smears
+         the type while scrolling, so the bar is simply opaque here. */
+      nav { background: rgba(9, 5, 17, 0.95); backdrop-filter: none; }
       .math-block { padding: 1rem 1.05rem; font-size: 0.88rem; }
       .math-legend { gap: 0.55rem; font-size: 0.85rem; }
       .math-legend .term { width: 100%; }
