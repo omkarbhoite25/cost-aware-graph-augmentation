@@ -788,7 +788,7 @@
     }
 
     @media (max-width: 720px) {
-      :root { --content-gutter: 0px; }
+      :root { --content-gutter: 0.8rem; }
       /* Reading the backdrop back over the canvas every frame is what smears
          the type while scrolling, so the bar is simply opaque here. */
       nav { background: rgba(9, 5, 17, 0.95); backdrop-filter: none; }
@@ -807,7 +807,6 @@
       nav ul { margin-inline: 0; }
       .figure-grid { grid-template-columns: 1fr; }
       .corner  { display: none; }
-      .sheet::before, .sheet::after { display: none; }
     }
   </style>
 </head>
