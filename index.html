@@ -38,6 +38,18 @@
       --accent-light: #e8f0f9;
       --accent-rule:  #c5d9f0;
 
+      /* atmospheric field: the ground the masthead and colophon sit on, and
+         the type that sits on it. The shader's own ramp is set in the module
+         at the foot of this file and peaks at the document's --accent, so the
+         field reads as an extension of the page rather than an import. */
+      --sh-void:    #05080e;
+      --sh-deep:    #0a1526;
+      --sh-ice:     #93bed0;
+      --sh-type:    #f4f8fb;
+      --sh-type-2:  #cfdde7;
+      --sh-type-3:  #c6d6e1;
+      --sh-line:    rgba(190, 214, 228, 0.22);
+
       --serif:   'EB Garamond', Georgia, serif;
       --display: 'Fraunces', Georgia, serif;
       --mono:    'DM Mono', ui-monospace, 'Courier New', monospace;
@@ -60,7 +72,7 @@
     }
 
     body {
-      background: var(--shell);
+      background: var(--sh-void);
       color: var(--ink);
       font-family: var(--serif);
       font-size: 1rem;
@@ -69,25 +81,82 @@
       padding: clamp(0px, 2.2vw, 34px);
     }
 
+    /* ── Atmospheric field ───────────────────────────────
+       One WebGL grain-gradient fills the viewport behind everything.
+       The parchment sheet is opaque and covers most of it; the masthead
+       and the colophon are transparent windows onto the field, so the
+       atmosphere stays continuous without ever sitting behind body text.
+       If WebGL is unavailable the flat --sh-void ground stands in. */
+    .site-field {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background: var(--sh-void);
+    }
+    .site-field-canvas { position: absolute; inset: 0; }
+    /* Weights the field: quiet and dark across the top, where the masthead
+       type sits, and left to the shader around the periphery. */
+    .site-field-veil {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(104% 62% at 50% 4%,
+          rgba(5,8,14,0.80) 0%, rgba(5,8,14,0.54) 38%,
+          rgba(5,8,14,0.20) 68%, rgba(5,8,14,0) 92%),
+        linear-gradient(180deg,
+          rgba(5,8,14,0.58) 0%, rgba(5,8,14,0.20) 30%, rgba(5,8,14,0) 56%),
+        linear-gradient(0deg,
+          rgba(5,8,14,0.52) 0%, rgba(5,8,14,0.16) 24%, rgba(5,8,14,0) 48%);
+    }
+
     /* ── Paper shell ─────────────────────────────────── */
+    /* The shell is now a transparent frame. The parchment tone it used to
+       carry moved onto `main`, which is the part of the sheet that has to
+       stay opaque: every figure is composited onto it with
+       `mix-blend-mode: multiply`, which needs a light ground. */
     .paper {
       position: relative;
+      z-index: 1;
       isolation: isolate;
+      border-radius: clamp(0px, 1.4vw, 20px);
+      overflow: clip;
+    }
+
+    /* The sheet is the opaque part of the page: the nav and everything
+       below it. `main` is only the 1040px content column, so the parchment
+       has to sit on a wrapper that spans the full width. */
+    .sheet {
+      position: relative;
+      z-index: 1;
       background-color: var(--paper);
-      /* subtle diagonal technical texture */
       background-image:
         repeating-linear-gradient(135deg,
           rgba(26,24,20,0.020) 0px, rgba(26,24,20,0.020) 1px,
           transparent 1px, transparent 8px);
       border-radius: clamp(0px, 1.4vw, 20px);
-      box-shadow: 0 1px 0 rgba(255,255,255,0.5) inset,
-                  0 24px 70px rgba(0,0,0,0.45);
+      /* clip, not hidden: hidden would make this a scroll container and
+         silently unpin the sticky nav. */
       overflow: clip;
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.5) inset,
+        0 0 0 1px rgba(147, 190, 208, 0.16),
+        0 6px 34px rgba(45, 90, 142, 0.38),
+        0 26px 80px rgba(5, 8, 14, 0.55);
     }
 
-    /* container-lines: vertical guides at the content container edges */
-    .paper::before,
-    .paper::after {
+    /* The sticky bar is part of the sheet, not a pill floating above it,
+       so it carries the same parchment rather than a brighter tint. */
+    nav {
+      background: var(--paper);
+      backdrop-filter: none;
+    }
+
+    /* container-lines: vertical guides at the content container edges.
+       These hang off .sheet rather than .paper: the sheet is the opaque
+       layer, so guides drawn beneath it would be covered. */
+    .sheet::before,
+    .sheet::after {
       content: "";
       position: absolute;
       top: 0;
@@ -97,11 +166,10 @@
       background: var(--line-color);
       pointer-events: none;
     }
-    .paper::before { left:  max(var(--container-pad), calc((100% - var(--container-max)) / 2)); }
-    .paper::after  { right: max(var(--container-pad), calc((100% - var(--container-max)) / 2)); }
+    .sheet::before { left:  max(var(--container-pad), calc((100% - var(--container-max)) / 2)); }
+    .sheet::after  { right: max(var(--container-pad), calc((100% - var(--container-max)) / 2)); }
 
     .paper > header,
-    .paper > main,
     .paper > footer { position: relative; z-index: 1; }
 
     /* ── Header ──────────────────────────────────────── */
@@ -674,6 +742,79 @@
       color: #8d8474;
     }
 
+    /* ── Masthead and colophon on the field ──────────────
+       These two bands are the only places the page sets type over the
+       shader, so each colour here is chosen against --sh-void rather than
+       against parchment. Everything between them is unchanged. */
+    header {
+      /* Holds its darkness out to the affiliation lines, which sit near the
+         bottom of the block and were the tightest contrast case. */
+      background:
+        radial-gradient(78% 74% at 50% 46%,
+          rgba(5, 8, 14, 0.88) 0%,
+          rgba(5, 8, 14, 0.74) 42%,
+          rgba(5, 8, 14, 0.44) 70%,
+          rgba(5, 8, 14, 0.10) 90%,
+          rgba(5, 8, 14, 0) 100%);
+      border-bottom: none;
+    }
+    header h1 { color: var(--sh-type); }
+    header .title-accent { color: var(--sh-ice); }
+    header .authors { color: var(--sh-type-2); }
+    header .authors a {
+      color: var(--sh-type);
+      text-decoration-color: rgba(238, 243, 247, 0.45);
+    }
+    header .authors a:hover {
+      color: var(--sh-ice);
+      text-decoration-color: var(--sh-ice);
+    }
+    header .authors sup,
+    header .affiliation { color: var(--sh-type-3); }
+    header .bracket { border-color: var(--sh-line); opacity: 1; }
+    header .venue-tag {
+      color: var(--sh-ice);
+      background: rgba(147, 190, 208, 0.07);
+      border-color: rgba(147, 190, 208, 0.28);
+    }
+    header .btn-primary {
+      background: var(--sh-type);
+      color: var(--sh-deep);
+      border-color: var(--sh-type);
+    }
+    header .btn-primary:hover {
+      background: var(--sh-ice);
+      border-color: var(--sh-ice);
+      color: var(--sh-deep);
+    }
+    header .btn-secondary {
+      background: rgba(238, 243, 247, 0.05);
+      color: var(--sh-type-2);
+      border-color: rgba(190, 214, 228, 0.26);
+    }
+    header .btn-secondary:hover {
+      color: var(--sh-type);
+      border-color: var(--sh-type);
+    }
+    header .btn:focus-visible {
+      outline: 2px solid var(--sh-ice);
+      outline-offset: 3px;
+    }
+
+    footer {
+      background:
+        radial-gradient(88% 118% at 50% 44%,
+          rgba(5, 8, 14, 0.90) 0%,
+          rgba(5, 8, 14, 0.78) 48%,
+          rgba(5, 8, 14, 0.52) 82%,
+          rgba(5, 8, 14, 0.34) 100%);
+      border-top: none;
+    }
+    footer .footer-inner { color: var(--sh-type-3); }
+    footer .footer-inner .section-label { color: var(--sh-type-2); }
+    footer .footer-meta { color: rgba(198, 214, 225, 0.78); }
+    footer .footer-inner a { color: var(--sh-type); }
+
     body.lightbox-open { overflow: hidden; }
 
     @media (prefers-reduced-motion: reduce) {
@@ -712,11 +853,16 @@
       .figure-grid { grid-template-columns: 1fr; }
       .bracket { display: none; }
       .corner  { display: none; }
-      .paper::before, .paper::after { display: none; }
+      .sheet::before, .sheet::after { display: none; }
     }
   </style>
 </head>
 <body>
+
+<div class="site-field" aria-hidden="true">
+  <div class="site-field-canvas" id="site-field-canvas"></div>
+  <div class="site-field-veil"></div>
+</div>
 
 <div class="paper">
 
@@ -750,6 +896,8 @@
   </header>
 
   <!-- ════════════════════════════════════════════ NAV ═══ -->
+  <div class="sheet">
+
   <nav>
     <ul>
       <li><a href="#abstract">Abstract</a></li>
@@ -1010,6 +1158,8 @@
 
   </main>
 
+  </div><!-- /.sheet -->
+
   <!-- ═════════════════════════════════════════ FOOTER ═══ -->
   <footer>
     <div class="footer-inner">
@@ -1139,6 +1289,75 @@
     });
   })();
 
+</script>
+
+<!-- ══════════════════════════════════ ATMOSPHERIC FIELD ═══ -->
+<script type="module">
+  /* The mount handles its own resize, viewport and tab-visibility pausing,
+     and stops requesting frames entirely at speed 0. Failure is silent: the
+     flat --sh-void ground underneath is the fallback. */
+  const host = document.getElementById('site-field-canvas');
+  if (host) {
+    try {
+      const {
+        ShaderMount, grainGradientFragmentShader,
+        getShaderColorFromString, getShaderNoiseTexture,
+      } = await import('https://cdn.jsdelivr.net/npm/@paper-design/shaders@0.0.80/+esm');
+
+      /* Deep navy through the page's own accent to a single ice highlight,
+         which softness keeps diffuse enough never to read as a glow. */
+      const palette = ['#070d18', '#0b1b30', '#123049', '#1f4a76', '#2d5a8e', '#4a7fa3'];
+
+      /* The mount reads this texture synchronously and throws if it is not
+         decoded yet, so wait for it before constructing. */
+      const grain = getShaderNoiseTexture();
+      if (grain && !grain.complete) {
+        await new Promise((resolve, reject) => {
+          grain.addEventListener('load', resolve, { once: true });
+          grain.addEventListener('error', reject, { once: true });
+        });
+      }
+
+      const still  = window.matchMedia('(prefers-reduced-motion: reduce)');
+      const narrow = window.matchMedia('(max-width: 720px)');
+      const speed  = () => (still.matches ? 0 : 0.45);
+      const budget = () => (narrow.matches ? 1200000 : 2600000);
+
+      const shader = new ShaderMount(
+        host,
+        grainGradientFragmentShader,
+        {
+          u_colorBack:    getShaderColorFromString('#05080e'),
+          u_colors:       palette.map(getShaderColorFromString),
+          u_colorsCount:  palette.length,
+          u_softness:     0.86,
+          u_intensity:    0.22,
+          u_noise:        0.15,
+          u_shape:        1,        /* wave */
+          u_noiseTexture: grain,
+          u_fit:          0,
+          u_scale:        0.92,
+          u_rotation:     0,
+          u_originX:      0.5,
+          u_originY:      0.5,
+          u_offsetX:      0,
+          u_offsetY:      0,
+          u_worldWidth:   0,
+          u_worldHeight:  0,
+        },
+        undefined,
+        speed(),
+        0,
+        1,          /* a diffuse gradient gains nothing from 2x rendering */
+        budget()
+      );
+
+      still.addEventListener('change',  () => shader.setSpeed(speed()));
+      narrow.addEventListener('change', () => shader.setMaxPixelCount(budget()));
+    } catch (err) {
+      console.warn('Atmospheric field unavailable:', err);
+    }
+  }
 </script>
 
 </body>
