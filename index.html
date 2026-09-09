@@ -427,7 +427,12 @@
       color: var(--ink-3);
     }
     .stat-value { font-family: var(--serif); font-size: 1.5rem; line-height: 1.2; color: var(--ink); max-width: 100%; overflow-x: auto; overflow-y: hidden; }
-    .stat-value.long { font-size: 1.12rem; line-height: 1.45; }
+    .stat-value.long {
+      font-size: 1.12rem;
+      line-height: 1.45;
+      overflow-x: clip;          /* it wraps now, so nothing to scroll */
+      white-space: normal;
+    }
     /* Held on one line, so the size has to track the column width. */
     .stat-value.tight { font-size: clamp(15px, 1.8vw, 1.25rem); white-space: nowrap; }
     .stat-note  { font-size: 0.88rem; color: var(--ink-3); line-height: 1.5; }
@@ -1008,7 +1013,7 @@
       <div class="callout">
         <div class="stat">
           <span class="stat-label">Budget levels</span>
-          <span class="stat-value long">$C \in \{137.06,\,251.69,\,373.89,\,560.84,\,934.73\}$</span>
+          <span class="stat-value long">$C \in \{137.06,\allowbreak\,251.69,\allowbreak\,373.89,\allowbreak\,560.84,\allowbreak\,934.73\}$</span>
           <span class="stat-note">Derived from the candidate cost structure, not chosen by hand.</span>
         </div>
         <div class="stat highlight">
