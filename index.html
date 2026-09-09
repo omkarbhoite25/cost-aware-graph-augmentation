@@ -283,6 +283,9 @@
     main {
       width: min(100% - (var(--container-pad) * 2), var(--container-max));
       margin-inline: auto;
+      /* main spans exactly the gap between the two vertical guides, so this
+         is the rule that shuts the document column at the foot. */
+      border-bottom: 1px solid var(--rule);
     }
 
     section {
@@ -737,8 +740,9 @@
       border-top: none;
     }
     footer .footer-inner {
-      border-top: 1px solid var(--rule);
-      padding-top: clamp(1.75rem, 3.5vw, 2.75rem);
+      border: 1px solid var(--rule);
+      padding: clamp(1.75rem, 3.5vw, 2.75rem) var(--content-gutter)
+               clamp(1.5rem, 3vw, 2.25rem);
     }
 
     .btn:focus-visible {
