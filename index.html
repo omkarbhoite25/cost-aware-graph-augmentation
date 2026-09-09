@@ -178,19 +178,6 @@
       border-bottom: 1px solid var(--rule);
     }
 
-    /* L-brackets framing the hero */
-    .bracket {
-      position: absolute;
-      width: 22px; height: 22px;
-      border: 1px solid var(--line-strong);
-      pointer-events: none;
-      opacity: 0.55;
-    }
-    .bracket.tl { top: 22px;    left: 22px;    border-right: none; border-bottom: none; }
-    .bracket.tr { top: 22px;    right: 22px;   border-left:  none; border-bottom: none; }
-    .bracket.bl { bottom: 22px; left: 22px;    border-right: none; border-top:    none; }
-    .bracket.br { bottom: 22px; right: 22px;   border-left:  none; border-top:    none; }
-
     .venue-tag {
       display: inline-block;
       font-family: var(--mono);
@@ -743,13 +730,7 @@
        gets a darkening of its own to hold type contrast. Colours come from
        the global tokens; nothing here needs its own palette. */
     header {
-      background:
-        radial-gradient(78% 74% at 50% 46%,
-          rgba(6, 4, 15, 0.88) 0%,
-          rgba(6, 4, 15, 0.74) 42%,
-          rgba(6, 4, 15, 0.44) 70%,
-          rgba(6, 4, 15, 0.10) 90%,
-          rgba(6, 4, 15, 0) 100%);
+      background: transparent;
       border-bottom: none;
     }
 
@@ -804,7 +785,6 @@
       nav { justify-content: flex-start; }
       nav ul { margin-inline: 0; }
       .figure-grid { grid-template-columns: 1fr; }
-      .bracket { display: none; }
       .corner  { display: none; }
       .sheet::before, .sheet::after { display: none; }
     }
@@ -821,11 +801,6 @@
 
   <!-- ═════════════════════════════════════════ HEADER ═══ -->
   <header>
-    <span class="bracket tl"></span>
-    <span class="bracket tr"></span>
-    <span class="bracket bl"></span>
-    <span class="bracket br"></span>
-
     <div class="venue-tag">EUSIPCO 2026 &nbsp;·&nbsp; Accepted</div>
 
     <h1><span class="line">Cost-aware Graph Augmentation for Robust Networks</span><span class="line">via <span class="title-accent">Effective Resistance</span></span></h1>
